@@ -1,1 +1,248 @@
-<div></div>
+<script>
+    import {onMount,createEventDispatcher} from 'svelte'
+    import {tokensInfo,turn,moveCompleted,pickedCoor,pickedKoma} from './stores.js'
+
+    const dispatch = createEventDispatcher();
+
+    let contents={
+        11:{player:false, kind:'kyo', movable: new Set()},
+        13:{player:false, kind:'fu', movable: new Set()},
+        28:{player:true, kind:'hisha', movable: new Set()},
+        51:{player:false, kind:'gyoku', movable: new Set()},
+        79:{player:true, kind:'gin', movable: new Set()},
+        91:{player:false, kind:'kyo', movable: new Set()},
+        97:{player:true, kind:'fu', movable: new Set()},
+        99:{player:true, kind:'kyo', movable: new Set()},
+    }
+
+    /**
+	 * @type {number[]}
+	 */
+    let allCoor=new Array()
+    for (let i=11; i<100; i++) {
+        if (i%10 !== 0) {
+            allCoor.push(i)
+        }
+    }
+    $: blanks = new Set([...allCoor].filter(element => !new Set(Object.keys(contents).map(k => parseInt(k))).has(element)))
+    let pickedMovable=new Set()
+    $: {
+        switch ($pickedCoor) {
+            case 0:
+                //TODO 盤上の選ばれた駒の赤線解除
+                //TODO fu/kyo/keiが行き所のない駒にならないようpickedMovableを修正
+                pickedMovable = blanks
+                console.log(pickedMovable)
+                break
+            case -1:
+                //TODO 盤上の選ばれた駒の赤線解除
+                pickedMovable = new Set()
+                break
+            default:
+                //TODO 盤上の選ばれた駒を赤線で囲む
+                pickedMovable = contents[$pickedCoor].movable
+                console.log(pickedMovable)
+        }
+	}
+
+    /**
+	 * @param {number} coor
+	 */
+    function checkExistance(coor){
+        //座標の存在確認
+        if (coor>10 && coor<100 && coor%10 !== 0) {
+            return true
+        } else {
+            return false
+        }
+    }
+    /**
+	 * @param {boolean} player
+	 * @param {number} coor
+	 */
+    function checkMovable(player, coor){
+        //playerから見たcoorの状況を返す
+        //味方がいたら1、空いていたら0、敵がいたら-1
+        if (coor in contents){
+            if (contents[coor].player === player){
+                return 1
+            }else{
+                return -1
+            }
+        }else{
+            return 0
+        }
+    }
+    /**
+	 * @param {boolean} player
+	 * @param {number} cur
+	 * @param {number} step
+	 */
+    function checkLongMove(player, cur, step) {
+        //遠隔系の可動範囲計算
+        let coor = cur+step
+        let coors = []
+        while (true) {
+            if (!checkExistance(coor)) return coors
+            switch (checkMovable(player, coor)){
+                case 1:
+                    return coors
+                case 0:
+                    coors.push(coor)
+                    coor=coor+step
+                    break
+                case -1:
+                    coors.push(coor)
+                    return coors
+            }
+        }
+    }
+    function renewMovable(){
+        for (let current in contents){
+            let player=contents[current].player;
+            let kind=contents[current].kind;
+            let movable=new Array();
+            let currentInt=parseInt(current);
+            let candidate=new Array();
+            // 近接系の可動マス計算
+            switch(kind){
+                case 'fu':
+                    candidate=[-1]
+                    break
+                case 'kei':
+                    candidate=[-12,8]
+                    break
+                case 'gin':
+                    candidate=[-11,-9,-1,9,11]
+                    break
+                case 'kin'||'narigin'||'narikei'||'narikyo'||'to':
+                    candidate=[-11,-10,-1,1,9,10]
+                    break
+                case 'gyoku':
+                    candidate=[-11,-10,-9,-1,1,9,10,11]
+                    break
+                case 'ryu'||'uma':
+                    candidate=[-10,-1,1,10]
+            }
+            if (!player){
+                candidate=candidate.map(c => c*-1)
+                console.log(current, candidate)
+            }
+            for (let cdd of candidate){
+                const dest=currentInt+cdd
+                if (checkExistance(dest)){
+                    if (checkMovable(player, dest) < 1){
+                        movable.push(dest)
+                    }
+                }
+            }
+            //遠隔系の可動マス計算
+            switch(kind){
+                case 'kyo':
+                    let step=-1
+                    if (!player) step =1
+                    movable = movable.concat(checkLongMove(player, currentInt, step))
+                    break
+                case 'hisha'||'ryu':
+                    movable = movable.concat(checkLongMove(player, currentInt, -1)).concat(checkLongMove(player, currentInt, 1)).concat(checkLongMove(player, currentInt, -10)).concat(checkLongMove(player, currentInt, 10))
+                    break
+                case 'kaku'||'uma':
+                    movable = movable.concat(checkLongMove(player, currentInt, -11)).concat(checkLongMove(player, currentInt, -9)).concat(checkLongMove(player, currentInt, 9)).concat(checkLongMove(player, currentInt, 11))
+            }
+            contents[current].movable= new Set(movable)
+        }
+    }
+
+    /**
+	 * @param {number} coor
+	 */
+    function pickKoma(coor) {
+        let info = contents[coor]
+        if (info.player===$turn){
+            //駒選択SE
+            dispatch('pick', {
+                kind: info.kind,
+			    coor: coor
+		    })
+        };
+        const coorStr = String(coor)
+        dispatch('read', {
+			text: coorStr.slice(0,1) + ' ' + coorStr.slice(1) + $tokensInfo[info.kind].sound
+		});
+        console.log(info.movable)
+    }
+
+    /**
+	 * @param {number} coor
+	 */
+    function pickBlank(coor) {
+        const coorStr = String(coor)
+        if (pickedMovable.has(coor)) {
+            if ($pickedCoor > 0) {
+                //TODO 動かした場合 要成判定
+            } else {
+                //打った場合
+                contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
+                dispatch('move', {
+                    text: ''
+                })
+            }
+            //TODO 指し手の読み上げと着手SE
+            renewMovable()
+        } else {
+            dispatch('read', {
+			    text: coorStr.slice(0,1) + ' ' + coorStr.slice(1)
+		    });
+        }
+    }
+
+    onMount(() => {
+		renewMovable()
+        console.log(blanks)
+	});
+
+</script>
+
+<div class="board">
+    <img src="/board.png" alt="" class="back">
+    {#each [1,2,3,4,5,6,7,8,9] as row}
+        <div>
+        {#each [9,8,7,6,5,4,3,2,1] as col}
+            {#if col*10+row in contents}
+                <img src={$tokensInfo[contents[col*10+row].kind].pic} 
+                alt={String(col) + ' ' + String(row) + $tokensInfo[contents[col*10+row].kind].sound}
+                class:gote={!contents[col*10+row].player} class="koma"
+                style="right:{1.6+(col-1)*10.8}%; top:{1.6+(row-1)*10.8}%"
+                on:click={() => pickKoma(col*10+row)}>
+            {:else}
+                <button class="koma blank" 
+                style="right:{1.6+(col-1)*10.8}%; top:{1.6+(row-1)*10.8}%"
+                on:click={() => pickBlank(col*10+row)}>{String(col) + ' ' + String(row)}</button>
+            {/if}
+        {/each}
+        </div>
+	{/each}
+</div>
+
+<style>
+    .board {
+        position: relative;
+        display: inline-block;
+    }
+    .back {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+    .gote {
+        transform:rotate(180deg);
+    }
+    .koma {
+        position: absolute;
+        width:10%
+    }
+    .blank {
+        height:10%;
+        opacity:0
+    }
+</style>

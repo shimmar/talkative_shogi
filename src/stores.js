@@ -1,23 +1,27 @@
 import { writable, readable } from 'svelte/store';
 
 export const tokensInfo = readable({
-	gyoku: { pic: '/gyoku.png', sound: 'ぎょく', promoted: null },
-	hisha: { pic: '/hisha.png', sound: 'ひしゃ', promoted: 'ryu' },
-	kaku: { pic: '/kaku.png', sound: 'かく', promoted: 'uma' },
-	kin: { pic: '/kin.png', sound: 'きん', promoted: null },
-	gin: { pic: '/gin.png', sound: 'ぎん', promoted: 'narigin' },
-	kei: { pic: '/kei.png', sound: 'けい', promoted: 'narikei' },
-	kyo: { pic: '/kyo.png', sound: 'きょう', promoted: 'narikyo' },
-	fu: { pic: '/fu.png', sound: 'ふ', promoted: 'to' },
-	ryu: { pic: '/ryu.png', sound: 'りゅう', promoted: null },
-	uma: { pic: '/uma.png', sound: 'うま', promoted: null },
-	narigin: { pic: '/narigin.png', sound: 'なりぎん', promoted: null },
-	narikei: { pic: '/narikei.png', sound: 'なりけい', promoted: null },
-	narikyo: { pic: '/narikyo.png', sound: 'なりきょう', promoted: null },
-	to: { pic: '/to.png', sound: 'と', promoted: null }
+	gyoku: { pic: '/gyoku.png', sound: 'ぎょく', demoted: null, promoted: null },
+	hisha: { pic: '/hisha.png', sound: 'ひしゃ', demoted: null, promoted: 'ryu' },
+	kaku: { pic: '/kaku.png', sound: 'かく', demoted: null, promoted: 'uma' },
+	kin: { pic: '/kin.png', sound: 'きん', demoted: null, promoted: null },
+	gin: { pic: '/gin.png', sound: 'ぎん', demoted: null, promoted: 'narigin' },
+	kei: { pic: '/kei.png', sound: 'けい', demoted: null, promoted: 'narikei' },
+	kyo: { pic: '/kyo.png', sound: 'きょう', demoted: null, promoted: 'narikyo' },
+	fu: { pic: '/fu.png', sound: 'ふ', demoted: null, promoted: 'to' },
+	ryu: { pic: '/ryu.png', sound: 'りゅう', demoted: 'hisha', promoted: null },
+	uma: { pic: '/uma.png', sound: 'うま', demoted: 'kaku', promoted: null },
+	narigin: { pic: '/narigin.png', sound: 'なりぎん', demoted: 'gin', promoted: null },
+	narikei: { pic: '/narikei.png', sound: 'なりけい', demoted: 'kei', promoted: null },
+	narikyo: { pic: '/narikyo.png', sound: 'なりきょう', demoted: 'kyo', promoted: null },
+	to: { pic: '/to.png', sound: 'と', demoted: 'fu', promoted: null }
 });
 
 export const mochigomaArray = readable(['hisha', 'kaku', 'kin', 'gin', 'kei', 'kyo', 'fu']);
 
 //手番が先手ならtrue、後手ならfalse
 export const turn = writable(true);
+//これがfalseからtrueに変わったときのみ着手完了とみなす
+export const moveCompleted = writable(false);
+export const pickedCoor = writable(-1);
+export const pickedKoma = writable('');
