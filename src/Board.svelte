@@ -1,6 +1,6 @@
 <script>
     import {onMount,createEventDispatcher} from 'svelte'
-    import {tokensInfo,controll,turn,pickedCoor,pickedKoma} from './stores.js'
+    import {tokensInfo,control,turn,pickedCoor,pickedKoma} from './stores.js'
 
     const dispatch = createEventDispatcher();
 
@@ -39,7 +39,7 @@
     }
     let pickedMovable=new Set()
     $: {
-        if ($controll === 1) {
+        if ($control === 1) {
         switch ($pickedCoor) {
             case 0:
                 //TODO 盤上の選ばれた駒の赤線解除
@@ -256,7 +256,8 @@
             {#if col*10+row in contents}
                 <img src={$tokensInfo[contents[col*10+row].kind].pic} 
                 alt={String(col) + ' ' + String(row) + $tokensInfo[contents[col*10+row].kind].sound}
-                class:gote={!contents[col*10+row].player} class="koma"
+                class:gote={!contents[col*10+row].player}
+                class:selected={$control === 1 && $pickedCoor === col*10+row} class="koma"
                 style="right:{1.6+(col-1)*10.8}%; top:{1.6+(row-1)*10.8}%"
                 on:click={() => pickKoma(col*10+row)}>
             {:else}
@@ -289,5 +290,8 @@
     .blank {
         height:10%;
         opacity:0
+    }
+    .selected {
+        border: 3px solid #00ff00
     }
 </style>

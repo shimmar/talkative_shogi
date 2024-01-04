@@ -1,7 +1,7 @@
 <script>
     import Board from './Board.svelte'
     import Komadai from './Komadai.svelte'
-    import {controll,turn,pickedCoor,pickedKoma} from './stores.js'
+    import {control,turn,pickedCoor,pickedKoma} from './stores.js'
 
     let getKoma1 = ''
     let getKoma2 = ''
@@ -30,7 +30,7 @@
         if (typeof Audio != 'undefined') selectSound.play()
         pickedCoor.set(event.detail.coor)
         pickedKoma.set(event.detail.kind)
-        controll.set(1)
+        control.set(1)
 	}
     function handleMove(event) {
         if (typeof Audio != 'undefined') moveSound.play()
@@ -39,13 +39,13 @@
         } else {
             getKoma2=event.detail.text
         }
-        controll.set(2)
+        control.set(2)
     }
     function handleFinished() {
         pickedCoor.set(-1)
         pickedKoma.set('')
         turn.set(!$turn)
-        controll.set(0)
+        control.set(0)
     }
 </script>
 
