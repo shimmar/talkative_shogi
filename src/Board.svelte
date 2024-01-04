@@ -215,6 +215,7 @@
 	 */
     function pickBlank(coor) {
         const coorStr = String(coor)
+        let player = '', koma = ''
         if (pickedMovable.has(coor)) {
             let getKoma = ''
             if ($pickedCoor > 0) {
@@ -223,16 +224,22 @@
                 //打った場合
                 contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
             }
-            //TODO 指し手の読み上げと着手SE
+            //TODO 着手SE
             renewMovable() //TODO ここで相手玉の詰み判定
             dispatch('move', {
                 text: getKoma
             })
-        } else {
-            dispatch('read', {
-			    text: coorStr.slice(0,1) + ' ' + coorStr.slice(1)
-		    });
+            if ($turn) {
+                player = 'せんて、'
+            } else {
+                player = 'ごて、'
+            }
+            koma = $pickedKoma
         }
+        dispatch('read', {
+			text: player + coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma
+		});
+        
     }
 
     onMount(() => {

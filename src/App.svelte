@@ -5,18 +5,35 @@
 
     let getKoma1 = ''
     let getKoma2 = ''
-
+    /**
+	 * @type {HTMLAudioElement}
+	 */
+    let selectSound
+    /**
+	 * @type {HTMLAudioElement}
+	 */
+    let moveSound
+    if (typeof Audio != 'undefined') {
+        selectSound = new Audio('/select.mp3')
+        selectSound.volume = 0.5
+        selectSound.loop = false
+        moveSound = new Audio('/move.mp3')
+        moveSound.volume = 0.5
+        moveSound.loop = false
+    }
     function handleRead(event) {
         const uttr = new SpeechSynthesisUtterance(event.detail.text);
         uttr.lang = 'ja-JP';
         speechSynthesis.speak(uttr);
 	}
     function handlePick(event) {
+        if (typeof Audio != 'undefined') selectSound.play()
         pickedCoor.set(event.detail.coor)
         pickedKoma.set(event.detail.kind)
         controll.set(1)
 	}
     function handleMove(event) {
+        if (typeof Audio != 'undefined') moveSound.play()
         if ($turn) {
             getKoma1=event.detail.text
         } else {
