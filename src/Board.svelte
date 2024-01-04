@@ -198,7 +198,6 @@
     function pickKoma(coor) {
         let info = contents[coor]
         if (info.player===$turn){
-            //駒選択SE
             dispatch('pick', {
                 kind: info.kind,
 			    coor: coor
@@ -216,15 +215,21 @@
     function pickBlank(coor) {
         const coorStr = String(coor)
         let player = '', koma = ''
-        if (pickedMovable.has(coor)) {
+        if ($control === 1 && pickedMovable.has(coor)) {
             let getKoma = ''
             if ($pickedCoor > 0) {
                 //TODO 動かした場合 要成判定
+                const oldInfo = contents[$pickedCoor]
+                let promotion = false, finalKoma = $pickedKoma
+                if (promotion) {
+                    finalKoma = $tokensInfo[$pickedKoma].promoted
+                }
+                contents[coor] = {player:$turn, kind:finalKoma, movable: new Set()}
+                delete contents[$pickedCoor]
             } else {
                 //打った場合
                 contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
             }
-            //TODO 着手SE
             renewMovable() //TODO ここで相手玉の詰み判定
             dispatch('move', {
                 text: getKoma
