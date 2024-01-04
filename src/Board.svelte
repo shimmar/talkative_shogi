@@ -7,10 +7,42 @@
     let contents={
         11:{player:false, kind:'kyo', movable: new Set()},
         13:{player:false, kind:'fu', movable: new Set()},
+        17:{player:true, kind:'fu', movable: new Set()},
+        19:{player:true, kind:'kyo', movable: new Set()},
+        21:{player:false, kind:'kei', movable: new Set()},
+        22:{player:false, kind:'kaku', movable: new Set()},
+        23:{player:false, kind:'fu', movable: new Set()},
+        27:{player:true, kind:'fu', movable: new Set()},
         28:{player:true, kind:'hisha', movable: new Set()},
+        29:{player:true, kind:'kei', movable: new Set()},
+        31:{player:false, kind:'gin', movable: new Set()},
+        33:{player:false, kind:'fu', movable: new Set()},
+        37:{player:true, kind:'fu', movable: new Set()},
+        39:{player:true, kind:'gin', movable: new Set()},
+        41:{player:false, kind:'kin', movable: new Set()},
+        43:{player:false, kind:'fu', movable: new Set()},
+        47:{player:true, kind:'fu', movable: new Set()},
+        49:{player:true, kind:'kin', movable: new Set()},
         51:{player:false, kind:'gyoku', movable: new Set()},
+        53:{player:false, kind:'fu', movable: new Set()},
+        57:{player:true, kind:'fu', movable: new Set()},
+        59:{player:true, kind:'gyoku', movable: new Set()},
+        61:{player:false, kind:'kin', movable: new Set()},
+        63:{player:false, kind:'fu', movable: new Set()},
+        67:{player:true, kind:'fu', movable: new Set()},
+        69:{player:true, kind:'kin', movable: new Set()},
+        71:{player:false, kind:'gin', movable: new Set()},
+        73:{player:false, kind:'fu', movable: new Set()},
+        77:{player:true, kind:'fu', movable: new Set()},
         79:{player:true, kind:'gin', movable: new Set()},
+        81:{player:false, kind:'kei', movable: new Set()},
+        82:{player:false, kind:'hisha', movable: new Set()},
+        83:{player:false, kind:'fu', movable: new Set()},
+        87:{player:true, kind:'fu', movable: new Set()},
+        88:{player:true, kind:'kaku', movable: new Set()},
+        89:{player:true, kind:'kei', movable: new Set()},
         91:{player:false, kind:'kyo', movable: new Set()},
+        93:{player:false, kind:'fu', movable: new Set()},
         97:{player:true, kind:'fu', movable: new Set()},
         99:{player:true, kind:'kyo', movable: new Set()},
     }
@@ -42,8 +74,6 @@
         if ($control === 1) {
         switch ($pickedCoor) {
             case 0:
-                //TODO 盤上の選ばれた駒の赤線解除
-                //TODO fu/kyo/keiが行き所のない駒にならないようpickedMovableを修正
                 console.log('$pickedKoma:', $pickedKoma)
                 let tmpBlanks = [...blanks]
                 switch ($pickedKoma) {
@@ -74,11 +104,9 @@
                 console.log(pickedMovable)
                 break
             case -1:
-                //TODO 盤上の選ばれた駒の赤線解除
                 pickedMovable = new Set()
                 break
             default:
-                //TODO 盤上の選ばれた駒を赤線で囲む
                 pickedMovable = contents[$pickedCoor].movable
                 console.log(pickedMovable)
         }

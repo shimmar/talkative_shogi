@@ -1,6 +1,7 @@
 <script>
     import Board from './Board.svelte'
     import Komadai from './Komadai.svelte'
+    import Toryo from './Toryo.svelte'
     import {control,turn,pickedCoor,pickedKoma} from './stores.js'
 
     let getKoma1 = ''
@@ -47,17 +48,32 @@
         turn.set(!$turn)
         control.set(0)
     }
+    function showToryoDialog() {
+        //TODO 投了しますか？ダイアログを表示
+    }
 </script>
 
 <div class="main">
-<Komadai sente={false} getKoma={getKoma2} on:read={handleRead} on:pick={handlePick} on:finished={handleFinished}></Komadai>
-<Board on:read={handleRead} on:pick={handlePick} on:move={handleMove}></Board>
-<Komadai sente={true} getKoma={getKoma1} on:read={handleRead} on:pick={handlePick} on:finished={handleFinished}></Komadai>
+    <div class="edge gote">
+        <Komadai sente={false} getKoma={getKoma2} on:read={handleRead} on:pick={handlePick} on:finished={handleFinished} />
+        <Toryo sente={false} on:click={showToryoDialog}/>
+    </div>
+    <Board on:read={handleRead} on:pick={handlePick} on:move={handleMove}></Board>
+    <div class="edge">
+        <Komadai sente={true} getKoma={getKoma1} on:read={handleRead} on:pick={handlePick} on:finished={handleFinished} />
+        <Toryo sente={true} on:click={showToryoDialog}/>
+    </div>
 </div>
 <style>
     .main{
         width:400px;
         margin-left: auto;
         margin-right: auto;
+    }
+    .edge {
+        display: flex;
+    }
+    .gote {
+        transform:rotate(180deg);
     }
 </style>

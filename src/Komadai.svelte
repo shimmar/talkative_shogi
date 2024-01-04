@@ -11,7 +11,7 @@
 	 */
     export let getKoma;
 	const dispatch = createEventDispatcher();
-    let mochigomas = {hisha:1, kaku:0, kin:2, gin:0, kei:1, kyo:1, fu:3}
+    let mochigomas = {hisha:1, kaku:0, kin:0, gin:0, kei:0, kyo:0, fu:0}
 
     /**
 	 * @param {string} koma
@@ -71,10 +71,12 @@
     //TODO sente===$turn && $pickedCoor===0のとき $pickedKomaを赤線で囲む
 </script>
 
-<div class="komadai" class:gote={!sente} on:click={readMochigoma}>
+<div class="komadai" on:click={readMochigoma}>
     {#each $mochigomaArray as koma}
 		{#if mochigomas[koma] > 0}
-	        <img src={$tokensInfo[koma].pic} alt={$tokensInfo[koma].sound} on:click|stopPropagation={pickKoma(koma)} class="koma" />
+	        <img src={$tokensInfo[koma].pic} alt={$tokensInfo[koma].sound} on:click|stopPropagation={pickKoma(koma)} 
+            class:selected={$turn === sente && $control === 1 && $pickedCoor === 0 && $pickedKoma === koma} 
+            class="koma" />
             {#if mochigomas[koma] > 1}
 	            <span>{mochigomas[koma]}</span>
             {/if}
@@ -84,12 +86,13 @@
 
 <style>
     .komadai{
+        width:90%;
         background-color:beige
-    }
-    .gote {
-        transform:rotate(180deg);
     }
     .koma {
         width:10%
+    }
+    .selected {
+        border: 3px solid #00ff00
     }
 </style>
