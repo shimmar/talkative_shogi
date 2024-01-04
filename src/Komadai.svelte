@@ -1,6 +1,6 @@
 <script>
     import {onMount,createEventDispatcher} from 'svelte'
-    import {tokensInfo,mochigomaArray,turn,moveCompleted,pickedCoor,pickedKoma} from './stores.js'
+    import {tokensInfo,mochigomaArray,turn,controll,pickedCoor,pickedKoma} from './stores.js'
 
     /**
 	 * @type {boolean}
@@ -11,7 +11,7 @@
 	 */
     export let getKoma;
 	const dispatch = createEventDispatcher();
-    let mochigomas = {hisha:1, kaku:0, kin:2, gin:0, kei:0, kyo:0, fu:3}
+    let mochigomas = {hisha:1, kaku:0, kin:2, gin:0, kei:1, kyo:1, fu:3}
 
     /**
 	 * @param {string} koma
@@ -56,7 +56,7 @@
 	}
 
     $: {
-        if ($moveCompleted && sente === $turn) {
+        if ($controll === 2 && sente === $turn) {
             console.log(sente + 'koma deleted')
             if (getKoma) {
                 mochigomas[getKoma] += 1

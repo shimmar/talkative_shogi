@@ -1,7 +1,7 @@
 <script>
     import Board from './Board.svelte'
     import Komadai from './Komadai.svelte'
-    import {turn,moveCompleted,pickedCoor,pickedKoma} from './stores.js'
+    import {controll,turn,pickedCoor,pickedKoma} from './stores.js'
 
     let getKoma1 = ''
     let getKoma2 = ''
@@ -14,7 +14,7 @@
     function handlePick(event) {
         pickedCoor.set(event.detail.coor)
         pickedKoma.set(event.detail.kind)
-        console.log($turn + "picked" + event.detail.coor + event.detail.kind)
+        controll.set(1)
 	}
     function handleMove(event) {
         if ($turn) {
@@ -22,14 +22,13 @@
         } else {
             getKoma2=event.detail.text
         }
-        moveCompleted.set(true)
+        controll.set(2)
     }
     function handleFinished() {
-        moveCompleted.set(false)
         pickedCoor.set(-1)
-        console.log('pickedCoor reseted')
         pickedKoma.set('')
         turn.set(!$turn)
+        controll.set(0)
     }
 </script>
 

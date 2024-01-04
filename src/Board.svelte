@@ -1,6 +1,6 @@
 <script>
     import {onMount,createEventDispatcher} from 'svelte'
-    import {tokensInfo,turn,moveCompleted,pickedCoor,pickedKoma} from './stores.js'
+    import {tokensInfo,controll,turn,pickedCoor,pickedKoma} from './stores.js'
 
     const dispatch = createEventDispatcher();
 
@@ -24,14 +24,53 @@
             allCoor.push(i)
         }
     }
-    $: blanks = new Set([...allCoor].filter(element => !new Set(Object.keys(contents).map(k => parseInt(k))).has(element)))
+    $: blanks = [...allCoor].filter(element => !new Set(Object.keys(contents).map(k => parseInt(k))).has(element))
+    let fuExists = new Set()
+    $: {
+        fuExists = new Set()
+        for (let coorStr of Object.keys(contents)) {
+            const coor = parseInt(coorStr)
+            const content = contents[coor]
+            if (content.player === $turn && content.kind === 'fu') {
+                fuExists.add(Math.floor(coor/10))
+            }
+        }
+        console.log('fuExists:', fuExists)
+    }
     let pickedMovable=new Set()
     $: {
+        if ($controll === 1) {
         switch ($pickedCoor) {
             case 0:
                 //TODO 盤上の選ばれた駒の赤線解除
                 //TODO fu/kyo/keiが行き所のない駒にならないようpickedMovableを修正
-                pickedMovable = blanks
+                console.log('$pickedKoma:', $pickedKoma)
+                let tmpBlanks = [...blanks]
+                switch ($pickedKoma) {
+                    case 'kei':
+                        if ($turn) {
+                            tmpBlanks = tmpBlanks.filter(coor => coor%10>2)
+                        } else {
+                            tmpBlanks = tmpBlanks.filter(coor => coor%10<8)
+                        }
+                        break
+                    case 'kyo':
+                        if ($turn) {
+                            tmpBlanks = tmpBlanks.filter(coor => coor%10>1)
+                        } else {
+                            tmpBlanks = tmpBlanks.filter(coor => coor%10<9)
+                        }
+                        break
+                    case 'fu':
+                        if ($turn) {
+                            tmpBlanks = tmpBlanks.filter(coor => coor%10>1)
+                        } else {
+                            tmpBlanks = tmpBlanks.filter(coor => coor%10<9)
+                        }
+                        tmpBlanks = tmpBlanks.filter(coor => !fuExists.has(Math.floor(coor/10)))
+                        break
+                }
+                pickedMovable = new Set(tmpBlanks)
                 console.log(pickedMovable)
                 break
             case -1:
@@ -42,6 +81,7 @@
                 //TODO 盤上の選ばれた駒を赤線で囲む
                 pickedMovable = contents[$pickedCoor].movable
                 console.log(pickedMovable)
+        }
         }
 	}
 
@@ -126,7 +166,6 @@
             }
             if (!player){
                 candidate=candidate.map(c => c*-1)
-                console.log(current, candidate)
             }
             for (let cdd of candidate){
                 const dest=currentInt+cdd
@@ -169,7 +208,6 @@
         dispatch('read', {
 			text: coorStr.slice(0,1) + ' ' + coorStr.slice(1) + $tokensInfo[info.kind].sound
 		});
-        console.log(info.movable)
     }
 
     /**
@@ -178,17 +216,18 @@
     function pickBlank(coor) {
         const coorStr = String(coor)
         if (pickedMovable.has(coor)) {
+            let getKoma = ''
             if ($pickedCoor > 0) {
                 //TODO 動かした場合 要成判定
             } else {
                 //打った場合
                 contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
-                dispatch('move', {
-                    text: ''
-                })
             }
             //TODO 指し手の読み上げと着手SE
-            renewMovable()
+            renewMovable() //TODO ここで相手玉の詰み判定
+            dispatch('move', {
+                text: getKoma
+            })
         } else {
             dispatch('read', {
 			    text: coorStr.slice(0,1) + ' ' + coorStr.slice(1)
@@ -198,7 +237,6 @@
 
     onMount(() => {
 		renewMovable()
-        console.log(blanks)
 	});
 
 </script>

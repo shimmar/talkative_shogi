@@ -19,9 +19,9 @@ export const tokensInfo = readable({
 
 export const mochigomaArray = readable(['hisha', 'kaku', 'kin', 'gin', 'kei', 'kyo', 'fu']);
 
+//0:駒選択待ち 1:移動先指定待ち 2:Komadaiコンポーネントに変更反映待ち
+export const controll = writable(0);
 //手番が先手ならtrue、後手ならfalse
 export const turn = writable(true);
-//これがfalseからtrueに変わったときのみ着手完了とみなす
-export const moveCompleted = writable(false);
 export const pickedCoor = writable(-1);
 export const pickedKoma = writable('');
