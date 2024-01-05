@@ -128,7 +128,7 @@
 	 * @param {boolean} player
 	 * @param {number} coor
 	 */
-    function checkMovable(player, coor){
+    function checkCondition(player, coor){
         //playerから見たcoorの状況を返す
         //味方がいたら1、空いていたら0、敵がいたら-1
         if (coor in contents){
@@ -152,7 +152,7 @@
         let coors = []
         while (true) {
             if (!checkExistance(coor)) return coors
-            switch (checkMovable(player, coor)){
+            switch (checkCondition(player, coor)){
                 case 1:
                     return coors
                 case 0:
@@ -198,7 +198,7 @@
             for (let cdd of candidate){
                 const dest=currentInt+cdd
                 if (checkExistance(dest)){
-                    if (checkMovable(player, dest) < 1){
+                    if (checkCondition(player, dest) < 1){
                         movable.push(dest)
                     }
                 }
@@ -223,56 +223,72 @@
     /**
 	 * @param {number} coor
 	 */
-    function pickKoma(coor) {
+    function selectGrid(coor) {
         let info = contents[coor]
-        if (info.player===$turn){
-            dispatch('pick', {
-                kind: info.kind,
-			    coor: coor
-		    })
-        };
-        const coorStr = String(coor)
-        dispatch('read', {
-			text: coorStr.slice(0,1) + ' ' + coorStr.slice(1) + $tokensInfo[info.kind].sound
-		});
-    }
-
-    /**
-	 * @param {number} coor
-	 */
-    function pickBlank(coor) {
-        const coorStr = String(coor)
+        const coorStr = String(coor), cond = checkCondition($turn, coor)
         let player = '', koma = ''
-        if ($control === 1 && pickedMovable.has(coor)) {
-            let getKoma = ''
-            if ($pickedCoor > 0) {
-                //TODO 動かした場合 要成判定
-                const oldInfo = contents[$pickedCoor]
-                let promotion = false, finalKoma = $pickedKoma
-                if (promotion) {
-                    finalKoma = $tokensInfo[$pickedKoma].promoted
+        if (cond === 1) {
+            if ($pickedCoor === coor) {
+                dispatch('cancel')
+            } else {
+                dispatch('pick', {
+                    kind: info.kind,
+			        coor: coor
+		        })
+                dispatch('read', {
+			        text: coorStr.slice(0,1) + ' ' + coorStr.slice(1) + $tokensInfo[info.kind].sound
+		        });
+            }
+        } else if ($control === 0) {
+            if (cond === -1) {
+                koma = $tokensInfo[info.kind].sound
+            }
+            dispatch('read', {
+			    text: coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma
+		    });
+        } else {
+            if (pickedMovable.has(coor)) {
+                let getKoma = ''
+                if ($pickedCoor > 0) {
+                    //動かした場合
+                    if (cond === -1) {
+                        getKoma = info.kind
+                        let demoted = $tokensInfo[getKoma].demoted
+                        if (demoted) getKoma = demoted
+                    }
+                    let promotion = false, finalKoma = $pickedKoma
+                    //TODO 成判定
+                    if (promotion) {
+                        finalKoma = $tokensInfo[$pickedKoma].promoted
+                    }
+                    contents[coor] = {player:$turn, kind:finalKoma, movable: new Set()}
+                    delete contents[$pickedCoor]
+                } else {
+                    //打った場合
+                    contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
                 }
-                contents[coor] = {player:$turn, kind:finalKoma, movable: new Set()}
-                delete contents[$pickedCoor]
+                renewMovable() //TODO ここで相手玉の詰み判定
+                dispatch('move', {
+                    text: getKoma
+                })
+                if ($turn) {
+                    player = 'せんて、'
+                } else {
+                    player = 'ごて、'
+                }
+                koma = $pickedKoma
+                dispatch('read', {
+			        text: player + coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma
+		        });
             } else {
-                //打った場合
-                contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
+                if (cond === -1) {
+                    koma = $tokensInfo[info.kind].sound
+                }
+                dispatch('read', {
+			        text: coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma
+		        });
             }
-            renewMovable() //TODO ここで相手玉の詰み判定
-            dispatch('move', {
-                text: getKoma
-            })
-            if ($turn) {
-                player = 'せんて、'
-            } else {
-                player = 'ごて、'
-            }
-            koma = $pickedKoma
         }
-        dispatch('read', {
-			text: player + coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma
-		});
-        
     }
 
     onMount(() => {
@@ -292,11 +308,11 @@
                 class:gote={!contents[col*10+row].player}
                 class:selected={$control === 1 && $pickedCoor === col*10+row} class="koma"
                 style="right:{1.6+(col-1)*10.8}%; top:{1.6+(row-1)*10.8}%"
-                on:click={() => pickKoma(col*10+row)}>
+                on:click={() => selectGrid(col*10+row)}>
             {:else}
                 <button class="koma blank" 
                 style="right:{1.6+(col-1)*10.8}%; top:{1.6+(row-1)*10.8}%"
-                on:click={() => pickBlank(col*10+row)}>{String(col) + ' ' + String(row)}</button>
+                on:click={() => selectGrid(col*10+row)}>{String(col) + ' ' + String(row)}</button>
             {/if}
         {/each}
         </div>
