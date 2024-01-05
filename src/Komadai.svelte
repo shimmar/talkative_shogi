@@ -11,21 +11,29 @@
 	 */
     export let getKoma;
 	const dispatch = createEventDispatcher();
-    let mochigomas = {hisha:1, kaku:0, kin:0, gin:0, kei:0, kyo:0, fu:0}
+    let mochigomas = {hisha:0, kaku:0, kin:0, gin:0, kei:0, kyo:0, fu:0}
 
     /**
 	 * @param {string} koma
 	 */
     function pickKoma(koma) {
         if (sente===$turn){
-            dispatch('pick', {
-			    kind: koma,
-                coor: 0
-		    })
-        };
-        dispatch('read', {
-			text: $tokensInfo[koma].sound
-		});
+            if ($control === 1 && $pickedCoor === 0 && $pickedKoma === koma) {
+                dispatch('cancel')
+            } else {
+                dispatch('pick', {
+			        kind: koma,
+                    coor: 0
+		        })
+                dispatch('read', {
+			        text: $tokensInfo[koma].sound
+		        });
+            }
+        } else {
+            dispatch('read', {
+			    text: $tokensInfo[koma].sound
+		    });
+        }
     }
     function readMochigoma() {
         let player=''
@@ -57,7 +65,6 @@
 
     $: {
         if ($control === 2 && sente === $turn) {
-            console.log(sente + 'koma deleted')
             if (getKoma) {
                 mochigomas[getKoma] += 1
             }

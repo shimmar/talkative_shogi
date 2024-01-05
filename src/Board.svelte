@@ -46,6 +46,34 @@
         97:{player:true, kind:'fu', movable: new Set()},
         99:{player:true, kind:'kyo', movable: new Set()},
     }
+    /**
+	 * @type {HTMLElement}
+	 */
+    let promotionDialog
+    /**
+	 * @type {HTMLElement}
+	 */
+    let nariImg
+    /**
+	 * @type {HTMLElement}
+	 */
+    let narazuImg
+
+    let nariImgSrc = '', nariImgAlt = '', narazuImgSrc = '', narazuImgAlt = ''
+    $: {
+        if ($pickedKoma && $tokensInfo[$pickedKoma].promoted) {
+            nariImgSrc = $tokensInfo[$tokensInfo[$pickedKoma].promoted].pic
+            nariImgAlt = $tokensInfo[$tokensInfo[$pickedKoma].promoted].sound
+            narazuImgSrc = $tokensInfo[$pickedKoma].pic
+            narazuImgAlt = $tokensInfo[$pickedKoma].sound
+        }
+        else {
+            nariImgSrc = ''
+            nariImgAlt = ''
+            narazuImgSrc = ''
+            narazuImgAlt = ''
+        }
+    }
 
     /**
 	 * @type {number[]}
@@ -183,13 +211,20 @@
                 case 'gin':
                     candidate=[-11,-9,-1,9,11]
                     break
-                case 'kin'||'narigin'||'narikei'||'narikyo'||'to':
+                case 'kin':
+                case 'narigin':
+                case 'narikei':
+                case 'narikyo':
+                case 'to':
                     candidate=[-11,-10,-1,1,9,10]
                     break
                 case 'gyoku':
                     candidate=[-11,-10,-9,-1,1,9,10,11]
                     break
-                case 'ryu'||'uma':
+                case 'ryu':
+                    candidate=[-11,-9,9,11]
+                    break
+                case 'uma':
                     candidate=[-10,-1,1,10]
             }
             if (!player){
@@ -210,23 +245,33 @@
                     if (!player) step =1
                     movable = movable.concat(checkLongMove(player, currentInt, step))
                     break
-                case 'hisha'||'ryu':
+                case 'hisha':
+                case 'ryu':
                     movable = movable.concat(checkLongMove(player, currentInt, -1)).concat(checkLongMove(player, currentInt, 1)).concat(checkLongMove(player, currentInt, -10)).concat(checkLongMove(player, currentInt, 10))
                     break
-                case 'kaku'||'uma':
+                case 'kaku':
+                case 'uma':
                     movable = movable.concat(checkLongMove(player, currentInt, -11)).concat(checkLongMove(player, currentInt, -9)).concat(checkLongMove(player, currentInt, 9)).concat(checkLongMove(player, currentInt, 11))
             }
             contents[current].movable= new Set(movable)
         }
     }
 
+    function selectPromotion() {
+        promotionDialog.showModal()
+        return new Promise(resolve => {
+            nariImg.onclick = () => resolve(true);
+            narazuImg.onclick = () => resolve(false);
+        });
+    }
+
     /**
 	 * @param {number} coor
 	 */
-    function selectGrid(coor) {
+    async function selectGrid(coor) {
         let info = contents[coor]
         const coorStr = String(coor), cond = checkCondition($turn, coor)
-        let player = '', koma = ''
+        let koma = ''
         if (cond === 1) {
             if ($pickedCoor === coor) {
                 dispatch('cancel')
@@ -248,18 +293,44 @@
 		    });
         } else {
             if (pickedMovable.has(coor)) {
-                let getKoma = ''
+                let getKoma = '', promotionSound = ''
                 if ($pickedCoor > 0) {
                     //動かした場合
+                    let promotion = false, promotable = false, finalKoma = $pickedKoma
                     if (cond === -1) {
                         getKoma = info.kind
                         let demoted = $tokensInfo[getKoma].demoted
                         if (demoted) getKoma = demoted
                     }
-                    let promotion = false, finalKoma = $pickedKoma
-                    //TODO 成判定
-                    if (promotion) {
-                        finalKoma = $tokensInfo[$pickedKoma].promoted
+                    let promoted = $tokensInfo[$pickedKoma].promoted
+                    if (promoted) {
+                        //成れる駒の場合
+                        switch ($pickedKoma) {
+                            case 'fu':
+                            case 'kyo':
+                                if (($turn && coor % 10 === 1) || (!$turn && coor % 10 === 9)) {
+                                    promotable = true
+                                    promotion = true
+                                }
+                                break
+                            case 'kei':
+                                if (($turn && coor % 10 < 3) || (!$turn && coor % 10 > 7)) {
+                                    promotable = true
+                                    promotion = true
+                                }
+                                break
+                        }
+                        if (!promotion) {
+                            if ($turn && ($pickedCoor%10<4 || coor%10<4)) promotable = true
+                            else if (!$turn && ($pickedCoor%10>6 || coor%10>6)) promotable = true
+                            if (promotable) {
+                                promotion = await selectPromotion()
+                                promotionDialog.close()
+                            }
+                        }
+                        if (promotion) finalKoma = promoted
+                        if (promotable && promotion) promotionSound = 'なり'
+                        else if (promotable && !promotion) promotionSound = 'ならず'
                     }
                     contents[coor] = {player:$turn, kind:finalKoma, movable: new Set()}
                     delete contents[$pickedCoor]
@@ -271,14 +342,12 @@
                 dispatch('move', {
                     text: getKoma
                 })
-                if ($turn) {
-                    player = 'せんて、'
-                } else {
-                    player = 'ごて、'
-                }
-                koma = $pickedKoma
+                let player = ''
+                if ($turn) player = 'せんて、'
+                else player = 'ごて、'
+                koma = $tokensInfo[$pickedKoma].sound
                 dispatch('read', {
-			        text: player + coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma
+			        text: player + coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma + promotionSound
 		        });
             } else {
                 if (cond === -1) {
@@ -292,6 +361,9 @@
     }
 
     onMount(() => {
+        promotionDialog = document.getElementById('promotionDialog')
+        nariImg = document.getElementById('nariImg')
+        narazuImg = document.getElementById('narazuImg')
 		renewMovable()
 	});
 
@@ -317,6 +389,12 @@
         {/each}
         </div>
 	{/each}
+    <dialog id="promotionDialog" class:gote={!$turn}>
+        <div class="dialog">
+            <img id="nariImg" src={nariImgSrc} alt={nariImgAlt}>
+            <img id="narazuImg" src={narazuImgSrc} alt={narazuImgAlt}>
+        </div>
+    </dialog>
 </div>
 
 <style>
@@ -342,5 +420,8 @@
     }
     .selected {
         border: 3px solid #00ff00
+    }
+    .dialog {
+        display: flex;
     }
 </style>

@@ -68,15 +68,18 @@
 
 <div class="main">
     <div class="edge gote">
-        <Komadai sente={false} getKoma={getKoma2} on:read={handleRead} on:pick={handlePick} on:finished={handleFinished} />
+        <Komadai sente={false} getKoma={getKoma2} on:read={handleRead} on:pick={handlePick} 
+        on:finished={handleFinished} on:cancel={handleCancel} />
         <Toryo sente={false} on:click={showToryoDialog}/>
     </div>
-    <Board on:read={handleRead} on:pick={handlePick} on:move={handleMove} on:cancel={handleCancel}></Board>
+    <Board on:read={handleRead} on:pick={handlePick} on:move={handleMove} on:cancel={handleCancel} />
     <div class="edge">
-        <Komadai sente={true} getKoma={getKoma1} on:read={handleRead} on:pick={handlePick} on:finished={handleFinished} />
+        <Komadai sente={true} getKoma={getKoma1} on:read={handleRead} on:pick={handlePick} 
+        on:finished={handleFinished} on:cancel={handleCancel} />
         <Toryo sente={true} on:click={showToryoDialog}/>
     </div>
 </div>
+
 <style>
     .main{
         width:400px;
