@@ -95,7 +95,6 @@
                 fuExists.add(Math.floor(coor/10))
             }
         }
-        console.log('fuExists:', fuExists)
     }
     let pickedMovable=new Set()
     $: {
