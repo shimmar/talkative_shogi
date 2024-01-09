@@ -74,8 +74,6 @@
             dispatch('finished');
         }
     }
-    
-    //TODO sente===$turn && $pickedCoor===0のとき $pickedKomaを赤線で囲む
 </script>
 
 <div class="komadai" on:click={readMochigoma}>
