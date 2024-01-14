@@ -2,10 +2,22 @@
     import Board from './Board.svelte'
     import Komadai from './Komadai.svelte'
     import Toryo from './Toryo.svelte'
+    import ToryoDialog from './ToryoDialog.svelte'
+    import GameSetDialog from './GameSetDialog.svelte'
     import {control,turn,pickedCoor,pickedKoma} from './stores.js'
 
     let getKoma1 = ''
     let getKoma2 = ''
+    let winnerStr = ''
+    let toryo = false
+    /**
+	 * @type {{ showModal: () => ((e: CustomEvent<any>) => void) | null | undefined; close: () => ((e: CustomEvent<any>) => void) | null | undefined; }}
+	 */
+    let toryoDialog
+    /**
+	 * @type {{ showModal: () => ((e: CustomEvent<any>) => void) | null | undefined; }}
+	 */
+    let gameSetDialog
     /**
 	 * @type {HTMLAudioElement}
 	 */
@@ -29,11 +41,23 @@
         cancelSound.volume = 0.8
         cancelSound.loop = false
     }
-    function handleRead(event) {
-        const uttr = new SpeechSynthesisUtterance(event.detail.text);
+    /**
+	 * @param {string} text
+	 */
+    function readText(text) {
+        const uttr = new SpeechSynthesisUtterance(text);
         uttr.lang = 'ja-JP';
         speechSynthesis.speak(uttr);
+    }
+    /**
+	 * @param {{ detail: { text: string; }; }} event
+	 */
+    function handleRead(event) {
+        readText(event.detail.text)
 	}
+    /**
+	 * @param {{ detail: { coor: number; kind: string; }; }} event
+	 */
     function handlePick(event) {
         if (typeof Audio != 'undefined') selectSound.play()
         pickedCoor.set(event.detail.coor)
@@ -46,6 +70,9 @@
         pickedKoma.set('')
         control.set(0)
     }
+    /**
+	 * @param {{ detail: { text: string; }; }} event
+	 */
     function handleMove(event) {
         if (typeof Audio != 'undefined') moveSound.play()
         if ($turn) {
@@ -62,7 +89,18 @@
         control.set(0)
     }
     function showToryoDialog() {
-        //TODO 投了しますか？ダイアログを表示
+        toryoDialog.showModal()
+        readText('投了しますか？')
+    }
+    function doToryo() {
+        toryoDialog.close()
+        toryo = true
+        gameSet()
+    }
+    function gameSet() {
+        winnerStr = $turn===toryo ? '後手' :'先手'
+        gameSetDialog.showModal()
+        readText(winnerStr + 'の勝ちです！')
     }
 </script>
 
@@ -78,6 +116,8 @@
         on:finished={handleFinished} on:cancel={handleCancel} />
         <Toryo sente={true} on:click={showToryoDialog}/>
     </div>
+    <ToryoDialog bind:toryoDialog on:cancel={toryoDialog.close()} on:do={doToryo} />
+    <GameSetDialog bind:gameSetDialog winnerStr={winnerStr} />
 </div>
 
 <style>

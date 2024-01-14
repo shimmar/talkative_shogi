@@ -1,5 +1,5 @@
 <script>
-    import {onMount,createEventDispatcher} from 'svelte'
+    import {createEventDispatcher} from 'svelte'
     import {tokensInfo,mochigomaArray,turn,control,pickedCoor,pickedKoma} from './stores.js'
 
     /**
