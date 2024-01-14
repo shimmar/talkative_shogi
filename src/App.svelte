@@ -110,7 +110,7 @@
         on:finished={handleFinished} on:cancel={handleCancel} />
         <Toryo sente={false} on:click={showToryoDialog}/>
     </div>
-    <Board on:read={handleRead} on:pick={handlePick} on:move={handleMove} on:cancel={handleCancel} />
+    <Board on:read={handleRead} on:pick={handlePick} on:move={handleMove} on:cancel={handleCancel} on:tsumi={gameSet} />
     <div class="edge">
         <Komadai sente={true} getKoma={getKoma1} on:read={handleRead} on:pick={handlePick} 
         on:finished={handleFinished} on:cancel={handleCancel} />

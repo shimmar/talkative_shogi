@@ -46,6 +46,7 @@
         97:{player:true, kind:'fu', movable: new Set()},
         99:{player:true, kind:'kyo', movable: new Set()},
     }
+    let senteKing = 59, goteKing = 51, tsumi = false
     /**
 	 * @type {HTMLElement}
 	 */
@@ -101,7 +102,6 @@
         if ($control === 1) {
         switch ($pickedCoor) {
             case 0:
-                console.log('$pickedKoma:', $pickedKoma)
                 let tmpBlanks = [...blanks]
                 switch ($pickedKoma) {
                     case 'kei':
@@ -176,23 +176,44 @@
     function checkLongMove(player, cur, step) {
         //遠隔系の可動範囲計算
         let coor = cur+step
-        let coors = []
-        while (true) {
-            if (!checkExistance(coor)) return coors
+        let coors = [], conFlag = true
+        while (checkExistance(coor) && conFlag) {
             switch (checkCondition(player, coor)){
                 case 1:
-                    return coors
+                    if (player === $turn) coors.push(coor)
+                    conFlag = false
+                    break
                 case 0:
                     coors.push(coor)
                     coor=coor+step
                     break
                 case -1:
                     coors.push(coor)
-                    return coors
+                    conFlag = false
+                    break
             }
         }
+        return coors
+    }
+    /**
+	 * @param {number} coor
+	 */
+    function getCol(coor) {
+        return Math.floor(coor / 10)
+    }
+    /**
+	 * @param {number} coor
+	 */
+    function getRow(coor) {
+        return coor % 10
     }
     function renewMovable(){
+        //Step1 王手を考慮しない可動域計算、着手側利き場所算出、王手駒とピン/被ピン駒抽出
+        //指し終わった側の可動域には味方駒がいるマスを含む
+        // TODO 上記について、これから指す側についても同様の扱いでよさそう(selectGrid内で再度判定しているため)。要確認
+        // TODO ピン/被ピン駒抽出
+        const targetKingPosition = $turn ? goteKing : senteKing
+        let reachedArray = new Array(), checkKomas = new Set(), pinCheck = new Object()
         for (let current in contents){
             let player=contents[current].player;
             let kind=contents[current].kind;
@@ -232,7 +253,7 @@
             for (let cdd of candidate){
                 const dest=currentInt+cdd
                 if (checkExistance(dest)){
-                    if (checkCondition(player, dest) < 1){
+                    if (!(player !== $turn && checkCondition(player, dest) === 1)){
                         movable.push(dest)
                     }
                 }
@@ -252,8 +273,64 @@
                 case 'uma':
                     movable = movable.concat(checkLongMove(player, currentInt, -11)).concat(checkLongMove(player, currentInt, -9)).concat(checkLongMove(player, currentInt, 9)).concat(checkLongMove(player, currentInt, 11))
             }
-            contents[current].movable= new Set(movable)
+            const movableSet = new Set(movable)
+            contents[current].movable= movableSet
+            if (player === $turn) reachedArray = [...reachedArray, ...movable]
+            if (movableSet.has(targetKingPosition)) checkKomas.add(currentInt)
         }
+        const reached = new Set(reachedArray)
+
+        //Step2 相手玉可動域修正
+        const kingMovable = Array.from(contents[targetKingPosition].movable)
+        const kingMovableSet = new Set(kingMovable.filter(coor => !reached.has(coor)))
+        contents[targetKingPosition].movable = kingMovableSet
+
+        //Step3 ピンされた駒の動きを制限
+        // TODO
+
+        //Step4 王手されている場合候補手制限と詰み判定
+        console.log(checkKomas)
+        console.log(reached)
+        if (checkKomas.size >= 2) {
+            if (kingMovableSet.size === 0) tsumi = true
+            else {
+                for (let current in contents){
+                    let info = contents[current]
+                    if (info.player !== $turn && info.kind !== 'gyoku') info.movable = new Set()
+                }
+            }
+        } else if (checkKomas.size === 1) {
+            // TODO 王手駒が1枚の場合、玉以外の駒は王手駒を取るか合駒しかできなくする
+            // TODO その上で、候補手が0ならtsumi=true
+        }
+
+        
+        // for (let current in contents) {
+        //     const currentInt = parseInt(current)
+        //     const content = contents[current]
+        //     const player = content.player
+        //     const kind = content.kind
+        //     const movable = content.movable
+        //     if (player === $turn && movable.has(targetKingPosition)) checkKomas.add(currentInt)
+        //     else {
+        //         switch(kind) {
+        //             case 'hisha':
+        //             case 'ryu':
+        //                 if (getCol(currentInt) === getCol(targetKingPosition)) {
+        //                     pinCheck[currentInt] = {kind: 0, defence: new Set(), attack: new Set()}
+        //                 } else if (getRow(currentInt) === getRow(targetKingPosition)) {
+        //                     pinCheck[currentInt] = {kind: 10, defence: new Set(), attack: new Set()}
+        //                 }
+        //                 break
+        //             case 'kaku':
+        //             case 'uma':
+        //                 let diff = currentInt - targetKingPosition
+        //                 if (diff % 9 === 0) {
+        //                     pinCheck[currentInt] = {kind: 9, defence: new Set(), attack: new Set()}
+        //                 }
+        //         }
+        //     }
+        // }
     }
 
     function selectPromotion() {
@@ -296,6 +373,10 @@
                 if ($pickedCoor > 0) {
                     //動かした場合
                     let promotion = false, promotable = false, finalKoma = $pickedKoma
+                    if (finalKoma === 'gyoku') {
+                        if ($turn) senteKing = coor
+                        else goteKing = coor
+                    }
                     if (cond === -1) {
                         getKoma = info.kind
                         let demoted = $tokensInfo[getKoma].demoted
@@ -337,17 +418,18 @@
                     //打った場合
                     contents[coor] = {player:$turn, kind:$pickedKoma, movable: new Set()}
                 }
-                renewMovable() //TODO ここで相手玉の詰み判定
+                renewMovable()
                 dispatch('move', {
                     text: getKoma
                 })
                 let player = ''
-                if ($turn) player = 'せんて、'
-                else player = 'ごて、'
+                if ($turn) player = '先手、'
+                else player = '後手、'
                 koma = $tokensInfo[$pickedKoma].sound
                 dispatch('read', {
 			        text: player + coorStr.slice(0,1) + ' ' + coorStr.slice(1) + koma + promotionSound
 		        });
+                if (tsumi) dispatch('tsumi')
             } else {
                 if (cond === -1) {
                     koma = $tokensInfo[info.kind].sound
@@ -364,6 +446,7 @@
         nariImg = document.getElementById('nariImg')
         narazuImg = document.getElementById('narazuImg')
 		renewMovable()
+        turn.set(!$turn)
 	});
 
 </script>

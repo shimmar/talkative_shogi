@@ -22,6 +22,6 @@ export const mochigomaArray = readable(['hisha', 'kaku', 'kin', 'gin', 'kei', 'k
 //0:駒選択待ち 1:移動先指定待ち 2:Komadaiコンポーネントに変更反映待ち
 export const control = writable(0);
 //手番が先手ならtrue、後手ならfalse
-export const turn = writable(true);
+export const turn = writable(false);
 export const pickedCoor = writable(-1);
 export const pickedKoma = writable('');
