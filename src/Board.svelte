@@ -168,33 +168,7 @@
             return 0
         }
     }
-    /**
-	 * @param {boolean} player
-	 * @param {number} cur
-	 * @param {number} step
-	 */
-    function checkLongMove(player, cur, step) {
-        //遠隔系の可動範囲計算
-        let coor = cur+step
-        let coors = [], conFlag = true
-        while (checkExistance(coor) && conFlag) {
-            switch (checkCondition(player, coor)){
-                case 1:
-                    if (player === $turn) coors.push(coor)
-                    conFlag = false
-                    break
-                case 0:
-                    coors.push(coor)
-                    coor=coor+step
-                    break
-                case -1:
-                    coors.push(coor)
-                    conFlag = false
-                    break
-            }
-        }
-        return coors
-    }
+    
     /**
 	 * @param {number} coor
 	 */
@@ -211,9 +185,65 @@
         //Step1 王手を考慮しない可動域計算、着手側利き場所算出、王手駒とピン/被ピン駒抽出
         //指し終わった側の可動域には味方駒がいるマスを含む
         // TODO 上記について、これから指す側についても同様の扱いでよさそう(selectGrid内で再度判定しているため)。要確認
-        // TODO ピン/被ピン駒抽出
+
         const targetKingPosition = $turn ? goteKing : senteKing
         let reachedArray = new Array(), checkKomas = new Set(), pinCheck = new Object()
+
+        /**
+	     * @param {boolean} player
+	     * @param {number} cur
+	     * @param {number} step
+	     */
+        function checkLongMove(player, cur, step) {
+            //遠隔系の可動範囲計算
+            let coor = cur + step
+            let coors = [], conFlag = true, pinFlag = false, pinned = 0
+            while (checkExistance(coor) && conFlag) {
+                switch (checkCondition(player, coor)){
+                    case 1:
+                        if (player === $turn) coors.push(coor)
+                        conFlag = false
+                        break
+                    case 0:
+                        coors.push(coor)
+                        coor += step
+                        break
+                    case -1:
+                        coors.push(coor)
+                        if (player === $turn && coor !== targetKingPosition) {
+                            pinned = coor
+                            coor += step
+                            pinFlag = true
+                        }
+                        conFlag = false
+                        break
+                }
+            }
+            if (pinFlag) {
+                let pinCoors = Array.from(coors)
+                pinCoors.push(cur)
+                while (checkExistance(coor) && pinFlag) {
+                    switch (checkCondition(player, coor)) {
+                        case 1:
+                            pinFlag = false
+                            break
+                        case 0:
+                            pinCoors.push(coor)
+                            coor += step
+                            break
+                        case -1:
+                            if (coor === targetKingPosition) {
+                                pinCoors.push(coor)
+                                pinCheck[pinned] = new Set(pinCoors)
+                            }
+                            pinFlag = false
+                            break
+                    }
+                }
+            }
+            return coors
+        }
+        
         for (let current in contents){
             let player=contents[current].player;
             let kind=contents[current].kind;
@@ -286,7 +316,11 @@
         contents[targetKingPosition].movable = kingMovableSet
 
         //Step3 ピンされた駒の動きを制限
-        // TODO
+        console.log(pinCheck)
+        for (let [coor, rest] of Object.entries(pinCheck)) {
+            const originalMovable = Array.from(contents[coor].movable)
+            contents[coor].movable = new Set(originalMovable.filter(element => rest.has(element)))
+        }
 
         //Step4 王手されている場合候補手制限と詰み判定
         console.log(checkKomas)
@@ -303,34 +337,6 @@
             // TODO 王手駒が1枚の場合、玉以外の駒は王手駒を取るか合駒しかできなくする
             // TODO その上で、候補手が0ならtsumi=true
         }
-
-        
-        // for (let current in contents) {
-        //     const currentInt = parseInt(current)
-        //     const content = contents[current]
-        //     const player = content.player
-        //     const kind = content.kind
-        //     const movable = content.movable
-        //     if (player === $turn && movable.has(targetKingPosition)) checkKomas.add(currentInt)
-        //     else {
-        //         switch(kind) {
-        //             case 'hisha':
-        //             case 'ryu':
-        //                 if (getCol(currentInt) === getCol(targetKingPosition)) {
-        //                     pinCheck[currentInt] = {kind: 0, defence: new Set(), attack: new Set()}
-        //                 } else if (getRow(currentInt) === getRow(targetKingPosition)) {
-        //                     pinCheck[currentInt] = {kind: 10, defence: new Set(), attack: new Set()}
-        //                 }
-        //                 break
-        //             case 'kaku':
-        //             case 'uma':
-        //                 let diff = currentInt - targetKingPosition
-        //                 if (diff % 9 === 0) {
-        //                     pinCheck[currentInt] = {kind: 9, defence: new Set(), attack: new Set()}
-        //                 }
-        //         }
-        //     }
-        // }
     }
 
     function selectPromotion() {
