@@ -4,6 +4,7 @@
 
     const dispatch = createEventDispatcher();
 
+    /** @type {Object.<number,{player: boolean, kind: string, movable: Set<number>}>} */
     let contents={
         11:{player:false, kind:'kyo', movable: new Set()},
         13:{player:false, kind:'fu', movable: new Set()},
@@ -46,7 +47,7 @@
         97:{player:true, kind:'fu', movable: new Set()},
         99:{player:true, kind:'kyo', movable: new Set()},
     }
-    let senteKing = 59, goteKing = 51, tsumi = false
+    let senteKing = 59, goteKing = 51, checked = false, tsumi = false
     /**
 	 * @type {HTMLElement}
 	 */
@@ -81,7 +82,7 @@
 	 */
     let allCoor=new Array()
     for (let i=11; i<100; i++) {
-        if (i%10 !== 0) {
+        if (row(i) !== 0) {
             allCoor.push(i)
         }
     }
@@ -93,7 +94,7 @@
             const coor = parseInt(coorStr)
             const content = contents[coor]
             if (content.player === $turn && content.kind === 'fu') {
-                fuExists.add(Math.floor(coor/10))
+                fuExists.add(col(coor))
             }
         }
     }
@@ -102,29 +103,31 @@
         if ($control === 1) {
         switch ($pickedCoor) {
             case 0:
-                let tmpBlanks = [...blanks]
+                /** @type {number[]} */
+                let tmpBlanks = []
+                if (!checked) tmpBlanks = [...blanks]
                 switch ($pickedKoma) {
                     case 'kei':
                         if ($turn) {
-                            tmpBlanks = tmpBlanks.filter(coor => coor%10>2)
+                            tmpBlanks = tmpBlanks.filter(coor => row(coor) > 2)
                         } else {
-                            tmpBlanks = tmpBlanks.filter(coor => coor%10<8)
+                            tmpBlanks = tmpBlanks.filter(coor => row(coor) < 8)
                         }
                         break
                     case 'kyo':
                         if ($turn) {
-                            tmpBlanks = tmpBlanks.filter(coor => coor%10>1)
+                            tmpBlanks = tmpBlanks.filter(coor => row(coor) > 1)
                         } else {
-                            tmpBlanks = tmpBlanks.filter(coor => coor%10<9)
+                            tmpBlanks = tmpBlanks.filter(coor => row(coor) < 9)
                         }
                         break
                     case 'fu':
                         if ($turn) {
-                            tmpBlanks = tmpBlanks.filter(coor => coor%10>1)
+                            tmpBlanks = tmpBlanks.filter(coor => row(coor) > 1)
                         } else {
-                            tmpBlanks = tmpBlanks.filter(coor => coor%10<9)
+                            tmpBlanks = tmpBlanks.filter(coor => row(coor) < 9)
                         }
-                        tmpBlanks = tmpBlanks.filter(coor => !fuExists.has(Math.floor(coor/10)))
+                        tmpBlanks = tmpBlanks.filter(coor => !fuExists.has(col(coor)))
                         break
                 }
                 pickedMovable = new Set(tmpBlanks)
@@ -145,7 +148,7 @@
 	 */
     function checkExistance(coor){
         //座標の存在確認
-        if (coor>10 && coor<100 && coor%10 !== 0) {
+        if (coor > 10 && coor < 100 && row(coor) !== 0) {
             return true
         } else {
             return false
@@ -172,20 +175,22 @@
     /**
 	 * @param {number} coor
 	 */
-    function getCol(coor) {
+    function col(coor) {
+        //座標の列を求める
         return Math.floor(coor / 10)
     }
     /**
 	 * @param {number} coor
 	 */
-    function getRow(coor) {
+    function row(coor) {
+        //座標の行を求める
         return coor % 10
     }
     function renewMovable(){
         //Step1 王手を考慮しない可動域計算、着手側利き場所算出、王手駒とピン/被ピン駒抽出
         //指し終わった側の可動域には味方駒がいるマスを含む
         // TODO 上記について、これから指す側についても同様の扱いでよさそう(selectGrid内で再度判定しているため)。要確認
-
+        
         const targetKingPosition = $turn ? goteKing : senteKing
         /** @type {number[]} */
         let reachedArray = new Array()
@@ -323,17 +328,20 @@
         const reached = new Set(reachedArray)
 
         //Step2 相手玉可動域修正
+        // TODO 遠隔駒の王手に対し、一歩下がることで回避扱いになってしまうため修正
         const kingMovable = Array.from(contents[targetKingPosition].movable)
         const kingMovableSet = new Set(kingMovable.filter(coor => !reached.has(coor)))
         contents[targetKingPosition].movable = kingMovableSet
 
         //Step3 ピンされた駒の動きを制限
-        for (let [coor, rest] of Object.entries(pinCheck)) {
+        for (let [coorStr, rest] of Object.entries(pinCheck)) {
+            let coor = parseInt(coorStr)
             const originalMovable = Array.from(contents[coor].movable)
             contents[coor].movable = new Set(originalMovable.filter(element => rest.has(element)))
         }
 
         //Step4 王手されている場合候補手制限と詰み判定
+        checked = true
         const checkKomasKey = Object.keys(checkKomas)
         if (checkKomasKey.length >= 2) {
             if (kingMovableSet.size === 0) tsumi = true
@@ -360,7 +368,7 @@
                 }
             }
             if (tsumiFlag) tsumi = true
-        }
+        } else checked = false
     }
 
     function selectPromotion() {
@@ -418,21 +426,21 @@
                         switch ($pickedKoma) {
                             case 'fu':
                             case 'kyo':
-                                if (($turn && coor % 10 === 1) || (!$turn && coor % 10 === 9)) {
+                                if (($turn && row(coor) === 1) || (!$turn && row(coor) === 9)) {
                                     promotable = true
                                     promotion = true
                                 }
                                 break
                             case 'kei':
-                                if (($turn && coor % 10 < 3) || (!$turn && coor % 10 > 7)) {
+                                if (($turn && row(coor) < 3) || (!$turn && row(coor) > 7)) {
                                     promotable = true
                                     promotion = true
                                 }
                                 break
                         }
                         if (!promotion) {
-                            if ($turn && ($pickedCoor%10<4 || coor%10<4)) promotable = true
-                            else if (!$turn && ($pickedCoor%10>6 || coor%10>6)) promotable = true
+                            if ($turn && (row($pickedCoor) < 4 || row(coor) < 4)) promotable = true
+                            else if (!$turn && (row($pickedCoor) > 6 || row(coor) > 6)) promotable = true
                             if (promotable) {
                                 promotion = await selectPromotion()
                                 promotionDialog.close()
