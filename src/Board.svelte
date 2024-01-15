@@ -187,7 +187,12 @@
         // TODO 上記について、これから指す側についても同様の扱いでよさそう(selectGrid内で再度判定しているため)。要確認
 
         const targetKingPosition = $turn ? goteKing : senteKing
-        let reachedArray = new Array(), checkKomas = new Set(), pinCheck = new Object()
+        /** @type {number[]} */
+        let reachedArray = new Array()
+        /** @type {Object.<number, Set<number>>} */
+        let checkKomas = {}
+        /** @type {Object.<number, Set<number>>} */
+        let pinCheck = {}
 
         /**
 	     * @param {boolean} player
@@ -210,10 +215,15 @@
                         break
                     case -1:
                         coors.push(coor)
-                        if (player === $turn && coor !== targetKingPosition) {
-                            pinned = coor
-                            coor += step
-                            pinFlag = true
+                        if (player === $turn) {
+                            if (coor === targetKingPosition) {
+                                let checkCoors = new Set(coors).add(cur)
+                                checkKomas[cur] = checkCoors
+                            } else{
+                                pinned = coor
+                                coor += step
+                                pinFlag = true
+                            } 
                         }
                         conFlag = false
                         break
@@ -247,8 +257,10 @@
         for (let current in contents){
             let player=contents[current].player;
             let kind=contents[current].kind;
+            /** @type {number[]} */
             let movable=new Array();
             let currentInt=parseInt(current);
+            /** @type {number[]} */
             let candidate=new Array();
             // 近接系の可動マス計算
             switch(kind){
@@ -285,6 +297,7 @@
                 if (checkExistance(dest)){
                     if (!(player !== $turn && checkCondition(player, dest) === 1)){
                         movable.push(dest)
+                        if (player === $turn && dest === targetKingPosition) checkKomas[currentInt] = new Set([dest])
                     }
                 }
             }
@@ -306,7 +319,6 @@
             const movableSet = new Set(movable)
             contents[current].movable= movableSet
             if (player === $turn) reachedArray = [...reachedArray, ...movable]
-            if (movableSet.has(targetKingPosition)) checkKomas.add(currentInt)
         }
         const reached = new Set(reachedArray)
 
@@ -316,16 +328,14 @@
         contents[targetKingPosition].movable = kingMovableSet
 
         //Step3 ピンされた駒の動きを制限
-        console.log(pinCheck)
         for (let [coor, rest] of Object.entries(pinCheck)) {
             const originalMovable = Array.from(contents[coor].movable)
             contents[coor].movable = new Set(originalMovable.filter(element => rest.has(element)))
         }
 
         //Step4 王手されている場合候補手制限と詰み判定
-        console.log(checkKomas)
-        console.log(reached)
-        if (checkKomas.size >= 2) {
+        const checkKomasKey = Object.keys(checkKomas)
+        if (checkKomasKey.length >= 2) {
             if (kingMovableSet.size === 0) tsumi = true
             else {
                 for (let current in contents){
@@ -333,9 +343,23 @@
                     if (info.player !== $turn && info.kind !== 'gyoku') info.movable = new Set()
                 }
             }
-        } else if (checkKomas.size === 1) {
-            // TODO 王手駒が1枚の場合、玉以外の駒は王手駒を取るか合駒しかできなくする
-            // TODO その上で、候補手が0ならtsumi=true
+        } else if (checkKomasKey.length === 1) {
+            let tsumiFlag = true
+            /** @type {Set<number>} */
+            let rest = checkKomas[parseInt(checkKomasKey[0])]
+            for (let currentStr in contents) {
+                const cur = parseInt(currentStr)
+                const info = contents[cur];
+                if (info.player !== $turn) {
+                    let currentMovable = Array.from(info.movable)
+                    if (cur !== targetKingPosition) {
+                        currentMovable = currentMovable.filter(element => rest.has(element))
+                        contents[cur].movable = new Set(currentMovable)
+                    }
+                    if (currentMovable.length > 0) tsumiFlag = false
+                }
+            }
+            if (tsumiFlag) tsumi = true
         }
     }
 
