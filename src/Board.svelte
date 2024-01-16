@@ -224,6 +224,7 @@
                             if (coor === targetKingPosition) {
                                 let checkCoors = new Set(coors).add(cur)
                                 checkKomas[cur] = checkCoors
+                                if (checkExistance(coor+=step)) reachedArray.push(coor)
                             } else{
                                 pinned = coor
                                 coor += step
@@ -510,7 +511,7 @@
         </div>
 	{/each}
     <dialog id="promotionDialog" class:gote={!$turn}>
-        <div class="dialog">
+        <div class="promDialogContent">
             <img id="nariImg" src={nariImgSrc} alt={nariImgAlt}>
             <img id="narazuImg" src={narazuImgSrc} alt={narazuImgAlt}>
         </div>
@@ -541,7 +542,7 @@
     .selected {
         border: 3px solid #00ff00
     }
-    .dialog {
+    .promDialogContent {
         display: flex;
     }
 </style>
