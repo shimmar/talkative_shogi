@@ -329,7 +329,6 @@
         const reached = new Set(reachedArray)
 
         //Step2 相手玉可動域修正
-        // TODO 遠隔駒の王手に対し、一歩下がることで回避扱いになってしまうため修正
         const kingMovable = Array.from(contents[targetKingPosition].movable)
         const kingMovableSet = new Set(kingMovable.filter(coor => !reached.has(coor)))
         contents[targetKingPosition].movable = kingMovableSet
@@ -521,12 +520,10 @@
 <style>
     .board {
         position: relative;
-        display: inline-block;
+        margin: 0 auto;
     }
     .back {
-        display: block;
-        max-width: 100%;
-        height: auto;
+        width: 100%;
     }
     .gote {
         transform:rotate(180deg);

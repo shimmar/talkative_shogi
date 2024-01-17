@@ -122,12 +122,12 @@
 
 <style>
     .main{
-        width:400px;
-        margin-left: auto;
-        margin-right: auto;
+        width:100%;
+        margin: 0 auto;
     }
     .edge {
         display: flex;
+        min-height: 50px
     }
     .gote {
         transform:rotate(180deg);
