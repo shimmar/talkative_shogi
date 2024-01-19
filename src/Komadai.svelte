@@ -10,6 +10,8 @@
 	 * @type {string}
 	 */
     export let getKoma;
+    
+    $: player = sente ? '先手' : '後手'
 	const dispatch = createEventDispatcher();
     let mochigomas = {hisha:0, kaku:0, kin:0, gin:0, kei:0, kyo:0, fu:0}
 
@@ -36,12 +38,6 @@
         }
     }
     function readMochigoma() {
-        let player=''
-        if (sente){
-            player='せん'
-        }else{
-            player='ご'
-        }
         let content='';
         for (let koma of $mochigomaArray) {
             const num=mochigomas[koma]
@@ -59,7 +55,7 @@
             content='ありません'
         }
 		dispatch('read', {
-			text: player + 'てのもちごまは' + content
+			text: player + 'のもちごまは' + content
 		});
 	}
 
@@ -76,6 +72,7 @@
     }
 </script>
 
+<button on:click={readMochigoma} id="mochigomaBtn">持ち駒</button>
 <div class="komadai" on:click={readMochigoma}>
     {#each $mochigomaArray as koma}
 		{#if mochigomas[koma] > 0}
@@ -90,8 +87,13 @@
 </div>
 
 <style>
+    #mochigomaBtn {
+        width: 10%;
+        font-size: 5vw;
+        background: #00cc66;
+    }
     .komadai{
-        width:90%;
+        width: 90%;
         background-color:beige;
         display: flex;
         align-items: center;
