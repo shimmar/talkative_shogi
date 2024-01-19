@@ -537,7 +537,7 @@
         opacity:0
     }
     .selected {
-        border: 3px solid #00ff00
+        border: 1vw solid #00ff00
     }
     .promDialogContent {
         display: flex;

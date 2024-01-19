@@ -83,7 +83,7 @@
             class:selected={$turn === sente && $control === 1 && $pickedCoor === 0 && $pickedKoma === koma} 
             class="koma" />
             {#if mochigomas[koma] > 1}
-	            <span>{mochigomas[koma]}</span>
+	            <span id="komaCnt">{mochigomas[koma]}</span>
             {/if}
         {/if}
 	{/each}
@@ -92,12 +92,17 @@
 <style>
     .komadai{
         width:90%;
-        background-color:beige
+        background-color:beige;
+        display: flex;
+        align-items: center;
     }
     .koma {
-        width:10%
+        width:11%;
     }
     .selected {
-        border: 3px solid #00ff00
+        border: 1vw solid #00ff00
+    }
+    #komaCnt {
+        font-size: 4vw;
     }
 </style>

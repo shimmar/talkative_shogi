@@ -127,7 +127,6 @@
     }
     .edge {
         display: flex;
-        min-height: 50px
     }
     .gote {
         transform:rotate(180deg);
