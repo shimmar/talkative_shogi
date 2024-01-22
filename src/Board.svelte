@@ -48,6 +48,8 @@
         99:{player:true, kind:'kyo', movable: new Set()},
     }
     let senteKing = 59, goteKing = 51, checked = false, tsumi = false
+    /** @type {Set<Number>} */
+    let aigomaSpace = new Set
     /**
 	 * @type {HTMLElement}
 	 */
@@ -104,8 +106,8 @@
         switch ($pickedCoor) {
             case 0:
                 /** @type {number[]} */
-                let tmpBlanks = []
-                if (!checked) tmpBlanks = [...blanks]
+                let tmpBlanks = [...blanks]
+                if (checked) tmpBlanks = tmpBlanks.filter(space => aigomaSpace.has(space))
                 switch ($pickedKoma) {
                     case 'kei':
                         if ($turn) {
@@ -303,7 +305,7 @@
                 if (checkExistance(dest)){
                     if (!(player !== $turn && checkCondition(player, dest) === 1)){
                         movable.push(dest)
-                        if (player === $turn && dest === targetKingPosition) checkKomas[currentInt] = new Set([dest])
+                        if (player === $turn && dest === targetKingPosition) checkKomas[currentInt] = new Set([currentInt])
                     }
                 }
             }
@@ -350,6 +352,7 @@
                     let info = contents[current]
                     if (info.player !== $turn && info.kind !== 'gyoku') info.movable = new Set()
                 }
+                aigomaSpace = new Set()
             }
         } else if (checkKomasKey.length === 1) {
             let tsumiFlag = true
@@ -367,6 +370,7 @@
                     if (currentMovable.length > 0) tsumiFlag = false
                 }
             }
+            aigomaSpace = rest
             if (tsumiFlag) tsumi = true
         } else checked = false
     }
