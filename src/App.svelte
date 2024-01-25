@@ -47,6 +47,7 @@
     function readText(text) {
         const uttr = new SpeechSynthesisUtterance(text);
         uttr.lang = 'ja-JP';
+        uttr.rate = 2;
         speechSynthesis.speak(uttr);
     }
     /**
